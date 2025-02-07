@@ -20,6 +20,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 ]
 dependencies = []
 
@@ -30,6 +31,9 @@ Source = "https://github.com/ftnext/happy-python-logging"
 
 [tool.hatch.version]
 path = "src/happy_python_logging/__about__.py"
+
+[[tool.hatch.envs.hatch-test.matrix]]
+python = ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
 [tool.hatch.envs.types]
 extra-dependencies = [
