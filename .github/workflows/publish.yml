@@ -1,0 +1,21 @@
+name: Publish Python Package
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pypa/hatch@install
+      - name: Build package
+        run: |
+          hatch build
+          pipx run twine check dist/*
+      - uses: pypa/gh-action-pypi-publish@release/v1
