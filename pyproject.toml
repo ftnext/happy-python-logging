@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "happy-python-logging"
+dynamic = ["version"]
+description = ''
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "ftnext", email = "takuyafjp+develop@gmail.com" },
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = []
+
+[project.urls]
+Documentation = "https://github.com/ftnext/happy-python-logging#readme"
+Issues = "https://github.com/ftnext/happy-python-logging/issues"
+Source = "https://github.com/ftnext/happy-python-logging"
+
+[tool.hatch.version]
+path = "src/happy_python_logging/__about__.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/happy_python_logging tests}"
+
+[tool.coverage.run]
+source_pkgs = ["happy_python_logging", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/happy_python_logging/__about__.py",
+]
+
+[tool.coverage.paths]
+happy_python_logging = ["src/happy_python_logging", "*/happy-python-logging/src/happy_python_logging"]
+tests = ["tests", "*/happy-python-logging/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
