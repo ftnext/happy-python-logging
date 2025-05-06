@@ -1,9 +1,21 @@
 """Module to make logging happy for application developers."""
 
+import io
 import logging
+from typing import TypedDict
+
+from typing_extensions import Unpack
 
 
-def configureLogger(name: str, **kwargs) -> logging.Logger:
+class LoggerConfiguration(TypedDict, total=False):
+    level: int
+    stream: io.TextIOWrapper
+    format: str
+
+
+def configureLogger(
+    name: str, **kwargs: Unpack[LoggerConfiguration]
+) -> logging.Logger:
     """Configure a non-root logger like `logging.basicConfig() <https://docs.python.org/ja/3/library/logging.html#logging.basicConfig>`__.
 
     Refer to https://rednafi.com/python/no_hijack_root_logger/
