@@ -1,7 +1,31 @@
+"""Module to make logging happy for application developers."""
+
 import logging
 
 
 def configureLogger(name: str, **kwargs) -> logging.Logger:
+    """Configure a non-root logger like `logging.basicConfig() <https://docs.python.org/ja/3/library/logging.html#logging.basicConfig>`__.
+
+    Refer to https://rednafi.com/python/no_hijack_root_logger/
+
+    Args:
+        name (str): The name for the logger
+        **kwargs: Optional configuration parameters
+            level: The logging level (e.g., logging.INFO, logging.DEBUG)
+            stream: The output stream (defaults to sys.stderr if None)
+            format: The log message format string
+
+    Returns:
+        logging.Logger: A configured logger instance
+
+    Example:
+        >>> logger = configureLogger(
+        ...     "awesome_lib",
+        ...     level=logging.DEBUG,
+        ...     format="%(asctime)s | %(levelname)s | %(name)s:%(funcName)s:%(lineno)d - %(message)s",
+        ... )
+        >>> logger.info("Application started")
+    """
     logger = logging.getLogger(name)
 
     level = kwargs.pop("level", None)
