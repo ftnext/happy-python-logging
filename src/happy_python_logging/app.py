@@ -2,7 +2,7 @@
 
 import io
 import logging
-from typing import TypedDict
+from typing import TypedDict, Optional
 
 from typing_extensions import Unpack
 
@@ -11,6 +11,7 @@ class LoggerConfiguration(TypedDict, total=False):
     level: int
     stream: io.TextIOWrapper
     format: str
+    filename: str
 
 
 def configureLogger(
@@ -26,6 +27,7 @@ def configureLogger(
             level: The logging level (e.g., logging.INFO, logging.DEBUG)
             stream: The output stream (defaults to sys.stderr if None)
             format: The log message format string
+            filename: The file to which logs will be written (if specified)
 
     Returns:
         logging.Logger: A configured logger instance
@@ -37,6 +39,15 @@ def configureLogger(
         ...     format="%(asctime)s | %(levelname)s | %(name)s:%(funcName)s:%(lineno)d - %(message)s",
         ... )
         >>> logger.info("Application started")
+        
+        # To log to a file:
+        >>> logger = configureLogger(
+        ...     "awesome_lib",
+        ...     level=logging.DEBUG,
+        ...     format="%(asctime)s | %(levelname)s | %(name)s:%(funcName)s:%(lineno)d - %(message)s",
+        ...     filename="app.log",
+        ... )
+        >>> logger.info("This will be written to app.log")
     """
     logger = logging.getLogger(name)
 
@@ -44,12 +55,20 @@ def configureLogger(
     if level is not None:
         logger.setLevel(level)
 
-    stream = kwargs.pop("stream", None)
-    console_handler = logging.StreamHandler(stream)
-
+    filename = kwargs.pop("filename", None)
     format = kwargs.pop("format", None)
     formatter = logging.Formatter(format)
-    console_handler.setFormatter(formatter)
 
-    logger.addHandler(console_handler)
+    if filename is not None:
+        # Create a file handler if filename is specified
+        file_handler = logging.FileHandler(filename)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+    else:
+        # Create a stream handler if no filename is specified
+        stream = kwargs.pop("stream", None)
+        console_handler = logging.StreamHandler(stream)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+
     return logger
