@@ -23,6 +23,8 @@ pip install happy-python-logging
 
 ### For library developers
 
+#### `getLoggerForLibrary()`
+
 `happy_python_logging.getLoggerForLibrary()`
 
 ```diff
@@ -35,6 +37,27 @@ pip install happy-python-logging
 ```
 
 See [`example`](https://github.com/ftnext/happy-python-logging/tree/main/example) for detail.
+
+#### `OrFilter`
+
+`happy_python_logging.lib.filters.OrFilter`
+
+```python
+import logging
+
+from happy_python_logging.lib.filters import OrFilter
+
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
+stream_handler = logging.StreamHandler()
+stream_handler.addFilter(OrFilter("libA", "libB"))
+root_logger.addHandler(stream_handler)
+```
+
+```
+DEBUG | libA:libA_awesome:8 - awesome
+DEBUG | libB:libB_fabulous:12 - fabulous
+```
 
 ## License
 
