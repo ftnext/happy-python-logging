@@ -10,13 +10,11 @@ def assert_console_handler(actual: logging.Handler) -> None:
 
 
 def assert_formatter(actual: logging.Formatter, expected_format: str) -> None:
-    assert actual._fmt == expected_format
+    assert actual._fmt == expected_format  # noqa: SLF001
 
 
-def test_basicConfigForLogger():
-    actual = configureLogger(
-        "awesome", level=logging.DEBUG, format="%(message)s"
-    )
+def test_basicConfigForLogger():  # noqa: N802
+    actual = configureLogger("awesome", level=logging.DEBUG, format="%(message)s")
 
     assert actual.level == logging.DEBUG
     assert len(actual.handlers) == 1

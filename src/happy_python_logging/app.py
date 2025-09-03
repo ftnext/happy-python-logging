@@ -13,7 +13,7 @@ class LoggerConfiguration(TypedDict, total=False):
     format: str
 
 
-def configureLogger(
+def configureLogger(  # noqa: N802
     name: str, **kwargs: Unpack[LoggerConfiguration]
 ) -> logging.Logger:
     """Configure a non-root logger like `logging.basicConfig() <https://docs.python.org/ja/3/library/logging.html#logging.basicConfig>`__.
@@ -47,8 +47,8 @@ def configureLogger(
     stream = kwargs.pop("stream", None)
     console_handler = logging.StreamHandler(stream)
 
-    format = kwargs.pop("format", None)
-    formatter = logging.Formatter(format)
+    format_ = kwargs.pop("format", None)
+    formatter = logging.Formatter(format_)
     console_handler.setFormatter(formatter)
 
     logger.addHandler(console_handler)
