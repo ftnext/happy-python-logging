@@ -2,13 +2,13 @@ import ast
 from collections.abc import Generator
 from typing import Any
 
-import happy_python_logging
+from happy_python_logging import __about__
 from happy_python_logging.lint.core import ConfigureRootLoggerChecker
 
 
 class HappyPythonLoggingPlugin:
     name = "flake8-happy-python-logging"
-    version = happy_python_logging.__version__
+    version = __about__.__version__
 
     def __init__(self, tree: ast.AST) -> None:
         self._tree = tree
