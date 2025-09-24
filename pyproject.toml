@@ -28,10 +28,16 @@ classifiers = [
 ]
 dependencies = ["typing-extensions"]
 
+[project.optional-dependencies]
+flake8 = ["flake8"]
+
 [project.urls]
 Documentation = "https://github.com/ftnext/happy-python-logging#readme"
 Issues = "https://github.com/ftnext/happy-python-logging/issues"
 Source = "https://github.com/ftnext/happy-python-logging"
+
+[project.entry_points."flake8.extensions"]
+HPL = "happy_python_logging.lint.flake8:HappyPythonLoggingPlugin"
 
 [tool.hatch.version]
 path = "src/happy_python_logging/__about__.py"
