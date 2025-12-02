@@ -18,3 +18,17 @@ def awesome():
         assert len(checker.errors) == 1
         assert checker.errors[0] == (4, 4, ANY)
         assert checker.errors[0][2].startswith("HPL101")
+
+    def test_HPL101_import_as(self):  # noqa: N802
+        code = """\
+import logging as log
+
+def awesome():
+    log.basicConfig(level=logging.DEBUG)
+"""
+        checker = ConfigureRootLoggerChecker()
+        checker.visit(ast.parse(code))
+
+        assert len(checker.errors) == 1
+        assert checker.errors[0] == (4, 4, ANY)
+        assert checker.errors[0][2].startswith("HPL101")
