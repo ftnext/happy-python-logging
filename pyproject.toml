@@ -7,7 +7,7 @@ name = "happy-python-logging"
 dynamic = ["version"]
 description = 'Make practical Python logging easy (and developers happy!)'
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "MIT"
 keywords = ["logging", "logger", "log"]
 authors = [
@@ -19,11 +19,11 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: System :: Logging",
 ]
 dependencies = ["typing-extensions"]
@@ -43,7 +43,7 @@ HPL = "happy_python_logging.lint.flake8:HappyPythonLoggingPlugin"
 path = "src/happy_python_logging/__about__.py"
 
 [[tool.hatch.envs.hatch-test.matrix]]
-python = ["3.9", "3.10", "3.11", "3.12", "3.13"]
+python = ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
 [tool.hatch.envs.types]
 extra-dependencies = [
