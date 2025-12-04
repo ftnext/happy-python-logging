@@ -8,7 +8,7 @@ ErrorMessage = str
 class ConfigureRootLoggerChecker(ast.NodeVisitor):
     def __init__(self) -> None:
         self.errors: list[tuple[LineNumber, ColumnOffset, ErrorMessage]] = []
-        self.logging_aliases: set[str] = {"logging"}
+        self.logging_aliases: set[str] = set()
         self.imported_names: set[str] = set()
 
     def visit_Import(self, node: ast.Import) -> None:  # noqa: N802
