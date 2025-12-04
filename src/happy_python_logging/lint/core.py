@@ -23,13 +23,22 @@ class ConfigureRootLoggerChecker(ast.NodeVisitor):
                 self.imported_names.add(alias.asname or alias.name)
         self.generic_visit(node)
 
-    def visit_Call(self, node: ast.Call) -> None:  # noqa: N802
-        if (
+    def _is_logging_attribute_basic_config_call(self, node: ast.Call) -> bool:
+        return (
             isinstance(node.func, ast.Attribute)
             and isinstance(node.func.value, ast.Name)
             and node.func.value.id in self.logging_aliases
             and node.func.attr == "basicConfig"
-        ) or (isinstance(node.func, ast.Name) and node.func.id in self.imported_names):
+        )
+
+    def _is_imported_basic_config_call(self, node: ast.Call) -> bool:
+        return isinstance(node.func, ast.Name) and node.func.id in self.imported_names
+
+    def _is_basic_config_call(self, node: ast.Call) -> bool:
+        return self._is_logging_attribute_basic_config_call(node) or self._is_imported_basic_config_call(node)
+
+    def visit_Call(self, node: ast.Call) -> None:  # noqa: N802
+        if self._is_basic_config_call(node):
             self.errors.append(
                 (
                     node.lineno,
