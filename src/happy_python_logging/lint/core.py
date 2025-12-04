@@ -29,9 +29,7 @@ class ConfigureRootLoggerChecker(ast.NodeVisitor):
             and isinstance(node.func.value, ast.Name)
             and node.func.value.id in self.logging_aliases
             and node.func.attr == "basicConfig"
-        ) or (
-            isinstance(node.func, ast.Name) and node.func.id == "basicConfig" and node.func.id in self.imported_names
-        ):
+        ) or (isinstance(node.func, ast.Name) and node.func.id in self.imported_names):
             self.errors.append(
                 (
                     node.lineno,

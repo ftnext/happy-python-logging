@@ -47,3 +47,17 @@ def awesome():
             assert len(checker.errors) == 1
             assert checker.errors[0] == (4, 4, ANY)
             assert checker.errors[0][2].startswith("HPL101")
+
+        def test_import_from_as(self):
+            code = """\
+from logging import basicConfig as loggingBasicConfig
+
+def awesome():
+    loggingBasicConfig(level=logging.DEBUG)
+"""
+            checker = ConfigureRootLoggerChecker()
+            checker.visit(ast.parse(code))
+
+            assert len(checker.errors) == 1
+            assert checker.errors[0] == (4, 4, ANY)
+            assert checker.errors[0][2].startswith("HPL101")
