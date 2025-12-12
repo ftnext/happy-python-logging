@@ -79,3 +79,45 @@ def awesome():
             assert len(checker.errors) == 1
             assert checker.errors[0] == (4, 4, ANY)
             assert checker.errors[0][2].startswith("HPL102")
+
+        def test_import_as(self):
+            code = """\
+import logging as log
+
+def awesome():
+    log.debug("message")
+"""
+            checker = ConfigureRootLoggerChecker()
+            checker.visit(ast.parse(code))
+
+            assert len(checker.errors) == 1
+            assert checker.errors[0] == (4, 4, ANY)
+            assert checker.errors[0][2].startswith("HPL102")
+
+        def test_import_from(self):
+            code = """\
+from logging import debug
+
+def awesome():
+    debug("message")
+"""
+            checker = ConfigureRootLoggerChecker()
+            checker.visit(ast.parse(code))
+
+            assert len(checker.errors) == 1
+            assert checker.errors[0] == (4, 4, ANY)
+            assert checker.errors[0][2].startswith("HPL102")
+
+        def test_import_from_as(self):
+            code = """\
+from logging import debug as dbg
+
+def awesome():
+    dbg("message")
+"""
+            checker = ConfigureRootLoggerChecker()
+            checker.visit(ast.parse(code))
+
+            assert len(checker.errors) == 1
+            assert checker.errors[0] == (4, 4, ANY)
+            assert checker.errors[0][2].startswith("HPL102")
