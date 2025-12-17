@@ -45,9 +45,6 @@ class ConfigureRootLoggerChecker(ast.NodeVisitor):
             return False
 
         func_name = node.func.id
-        if func_name == "basicConfig":
-            return True
-
         original_name = self._get_original_func_name_if_alias(func_name)
         return original_name == "basicConfig"
 
@@ -55,16 +52,7 @@ class ConfigureRootLoggerChecker(ast.NodeVisitor):
         return self._is_logging_attribute_basic_config_call(node) or self._is_imported_basic_config_call(node)
 
     def _is_aliased_logging_function_call(self, node: ast.Call) -> bool:
-        if not isinstance(node.func, ast.Name):
-            return False
-
         func_name = node.func.id
-        if func_name not in self.imported_names:
-            return False
-
-        if func_name == "basicConfig":
-            return False
-
         original_name = self._get_original_func_name_if_alias(func_name)
         return original_name in LOGGING_FUNCTION_NAMES
 
