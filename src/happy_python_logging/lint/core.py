@@ -29,6 +29,9 @@ class ConfigureRootLoggerChecker(ast.NodeVisitor):
                     self.imported_aliases[alias.asname] = alias.name
         self.generic_visit(node)
 
+    def _get_original_func_name_if_alias(self, alias_name: str) -> str:
+        return self.imported_aliases.get(alias_name, alias_name)
+
     def _is_logging_attribute_basic_config_call(self, node: ast.Call) -> bool:
         return (
             isinstance(node.func, ast.Attribute)
@@ -45,8 +48,7 @@ class ConfigureRootLoggerChecker(ast.NodeVisitor):
         if func_name == "basicConfig":
             return True
 
-        # エイリアスの場合、元の関数名を確認
-        original_name = self.imported_aliases.get(func_name)
+        original_name = self._get_original_func_name_if_alias(func_name)
         return original_name == "basicConfig"
 
     def _is_basic_config_call(self, node: ast.Call) -> bool:
@@ -63,8 +65,7 @@ class ConfigureRootLoggerChecker(ast.NodeVisitor):
         if func_name == "basicConfig":
             return False
 
-        # エイリアスの場合、元の関数名を確認
-        original_name = self.imported_aliases.get(func_name, func_name)
+        original_name = self._get_original_func_name_if_alias(func_name)
         return original_name in LOGGING_FUNCTION_NAMES
 
     def _is_logging_attribute_function_call(self, node: ast.Call) -> bool:
