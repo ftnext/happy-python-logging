@@ -1,8 +1,6 @@
 import ast
 from unittest.mock import ANY
 
-import pytest
-
 from happy_python_logging.lint.core import ConfigureRootLoggerChecker
 
 
@@ -65,7 +63,6 @@ def awesome():
             assert checker.errors[0][2].startswith("HPL101")
 
     class TestHLP102:
-        @pytest.mark.skip("TODO")
         def test_import(self):
             code = """\
 import logging
