@@ -1,6 +1,8 @@
 import ast
 from unittest.mock import ANY
 
+import pytest
+
 from happy_python_logging.lint.core import ConfigureRootLoggerChecker
 
 
@@ -63,12 +65,13 @@ def awesome():
             assert checker.errors[0][2].startswith("HPL101")
 
     class TestHLP102:
-        def test_import(self):
-            code = """\
+        @pytest.mark.parametrize("function", ["debug", "info", "warning", "error", "critical"])
+        def test_import(self, function):
+            code = f"""\
 import logging
 
 def awesome():
-    logging.debug("message")
+    logging.{function}("message")
 """
             checker = ConfigureRootLoggerChecker()
             checker.visit(ast.parse(code))
