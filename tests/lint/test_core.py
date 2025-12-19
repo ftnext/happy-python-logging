@@ -65,7 +65,7 @@ def awesome():
             assert checker.errors[0][2].startswith("HPL101")
 
     class TestHPL102:
-        @pytest.mark.parametrize("function", ["debug", "info", "warning", "error", "critical"])
+        @pytest.mark.parametrize("function", ["debug", "info", "warning", "error", "critical", "exception", "log"])
         def test_import(self, function):
             code = f"""\
 import logging
