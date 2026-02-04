@@ -59,6 +59,13 @@ DEBUG | libA:libA_awesome:8 - awesome
 DEBUG | libB:libB_fabulous:12 - fabulous
 ```
 
+You can combine `OrFilter` with `logging.Filter` using the `|` operator:
+
+```python
+OrFilter("libA", "libB") | logging.Filter("app.important")
+# reverse order also supported
+```
+
 ## License
 
 `happy-python-logging` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
