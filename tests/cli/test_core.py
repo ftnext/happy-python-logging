@@ -25,3 +25,8 @@ class TestNoCommand:
     def test_returns_nonzero(self):
         exit_code = main([])
         assert exit_code == 1
+
+    def test_unknown_top_level_arg_errors(self):
+        with pytest.raises(SystemExit) as excinfo:
+            main(["--bogus"])
+        assert excinfo.value.code == 2
