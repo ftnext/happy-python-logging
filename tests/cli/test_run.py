@@ -123,6 +123,15 @@ class TestRunCommand:
         assert logging.getLogger("httpx").level == logging.DEBUG
         assert args.script_args == []
 
+    def test_does_not_abbreviate_log_config(self, tmp_path):
+        # --log-c is a prefix of --log-config; it must not be captured here,
+        # so the script receives it intact.
+        script = tmp_path / "ok.py"
+        script.write_text("x = 1\n")
+        args = self._parse(str(script), "--log-c", "value")
+        assert args.log_config is None
+        assert args.script_args == ["--log-c", "value"]
+
     def test_forwards_script_args(self, tmp_path):
         script = tmp_path / "echo.py"
         script.write_text(

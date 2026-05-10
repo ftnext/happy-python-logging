@@ -25,6 +25,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser = subparsers.add_parser(
         "run",
         help="(experimental) Run a Python script with quick logging configuration",
+        allow_abbrev=False,
     )
     run_parser.add_argument(
         "--log-config",
