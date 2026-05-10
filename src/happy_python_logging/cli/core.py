@@ -107,16 +107,18 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args, remaining = parser.parse_known_args(argv)
 
-    if args.command is None:
-        parser.print_help()
-        return 1
-
     if args.command == "run":
         args.script_args = remaining
         return run_command(args)
 
+    # For any non-`run` invocation, leftover args (e.g. `--bogus`) are a typo
+    # we should surface, not silently absorb.
     if remaining:
         parser.error(f"unrecognized arguments: {' '.join(remaining)}")
+
+    if args.command is None:
+        parser.print_help()
+        return 1
 
     if args.command == "snippet":
         sys.stdout.write(SNIPPETS[args.name])
