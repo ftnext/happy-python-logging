@@ -26,6 +26,8 @@ def build_parser() -> argparse.ArgumentParser:
         "run",
         help="(experimental) Run a Python script with quick logging configuration",
         allow_abbrev=False,
+        # Don't intercept `-h`/`--help` after the script — they belong to the script.
+        add_help=False,
     )
     run_parser.add_argument(
         "--log-config",

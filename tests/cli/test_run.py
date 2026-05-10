@@ -123,6 +123,15 @@ class TestRunCommand:
         assert logging.getLogger("httpx").level == logging.DEBUG
         assert args.script_args == []
 
+    @pytest.mark.parametrize("flag", ["-h", "--help"])
+    def test_forwards_help_flags(self, tmp_path, flag):
+        # `-h`/`--help` after the script must reach the script, not trigger
+        # the wrapper's argparse help and exit.
+        script = tmp_path / "ok.py"
+        script.write_text("x = 1\n")
+        args = self._parse(str(script), flag)
+        assert args.script_args == [flag]
+
     def test_does_not_abbreviate_log_config(self, tmp_path):
         # --log-c is a prefix of --log-config; it must not be captured here,
         # so the script receives it intact.
