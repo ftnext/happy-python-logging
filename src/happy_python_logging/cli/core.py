@@ -108,14 +108,42 @@ def main(argv: list[str] | None = None) -> int:
     args, remaining = parser.parse_known_args(argv)
 
     if args.command == "run":
-        # Args that appeared before `run` in argv can't be script args; if they
-        # weren't consumed, they're top-level typos.
+        # Locate the `script` positional in argv. Anything after it is
+        # forwarded verbatim to the script (preserving `--`); anything before
+        # it that wasn't consumed by the parser is a wrapper-side typo
+        # (e.g. a top-level `--bogus`, or `--log-confg` between `run` and
+        # `script`).
         run_idx = argv.index("run")
-        pre_run = set(argv[:run_idx])
-        bad = [a for a in remaining if a in pre_run]
+        script_idx: int | None = None
+        i = run_idx + 1
+        while i < len(argv):
+            arg = argv[i]
+            if arg == "--":
+                # argparse positional separator: next token (if any) is script.
+                i += 1
+                if i < len(argv):
+                    script_idx = i
+                break
+            if arg in _LOG_CONFIG_FLAGS:
+                i += 2
+                continue
+            if arg.startswith("--log-config=") or arg.startswith("--log_config="):
+                i += 1
+                continue
+            if arg.startswith("-"):
+                i += 1
+                continue
+            script_idx = i
+            break
+        if script_idx is None:
+            parser.error("script is required")
+
+        pre_script = set(argv[:script_idx])
+        bad = [a for a in remaining if a in pre_script]
         if bad:
             parser.error(f"unrecognized arguments: {' '.join(bad)}")
-        args.script_args = remaining
+
+        args.script_args = argv[script_idx + 1 :]
         return run_command(args)
 
     # For any non-`run` invocation, leftover args (e.g. `--bogus`) are a typo

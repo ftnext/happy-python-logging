@@ -37,3 +37,27 @@ class TestNoCommand:
         with pytest.raises(SystemExit) as excinfo:
             main(["--bogus", "run", "script.py"])
         assert excinfo.value.code == 2
+
+    def test_typo_before_script_errors(self):
+        # `--log-confg` is a typo of --log-config and sits between `run` and
+        # the script positional. Without rejecting it, `httpx=debug` would be
+        # mis-parsed as the script path.
+        with pytest.raises(SystemExit) as excinfo:
+            main(["run", "--log-confg", "httpx=debug", "script.py"])
+        assert excinfo.value.code == 2
+
+
+class TestRunForwarding:
+    def test_preserves_double_dash_in_script_args(self, tmp_path, capsys):
+        # `--` should reach the script verbatim so scripts that need a literal
+        # `--` (or use it as their own separator) behave like `python script.py
+        # -- --flag`.
+        script = tmp_path / "echo.py"
+        script.write_text(
+            "import sys, pathlib\n"
+            "pathlib.Path(sys.argv[0] + '.argv').write_text(repr(sys.argv[1:]))\n"
+        )
+        exit_code = main(["run", str(script), "--", "--flag"])
+        assert exit_code == 0
+        recorded = (script.parent / (script.name + ".argv")).read_text()
+        assert recorded == "['--', '--flag']"
