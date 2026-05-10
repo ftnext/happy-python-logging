@@ -11,6 +11,8 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 _VALID_LEVEL_NAMES = {"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "NOTSET"}
+# RUST_LOG-style aliases mapped to Python's level names.
+_LEVEL_ALIASES = {"WARN": "WARNING"}
 
 _DEFAULT_FORMAT = "%(asctime)s %(levelname)s %(name)s: %(message)s"
 
@@ -21,6 +23,7 @@ class _RunHandler(logging.StreamHandler):
 
 def _parse_level(level: str) -> int:
     name = level.strip().upper()
+    name = _LEVEL_ALIASES.get(name, name)
     if name not in _VALID_LEVEL_NAMES:
         msg = f"invalid log level: {level!r}"
         raise SystemExit(msg)
