@@ -47,6 +47,9 @@ class TestParseLogConfig:
     def test_case_insensitive_level(self):
         assert parse_log_config("httpx=DeBuG") == [("httpx", logging.DEBUG)]
 
+    def test_warn_alias_for_warning(self):
+        assert parse_log_config("httpx=warn") == [("httpx", logging.WARNING)]
+
     def test_invalid_level_raises(self):
         with pytest.raises(SystemExit):
             parse_log_config("httpx=bogus")
