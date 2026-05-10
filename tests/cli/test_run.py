@@ -179,3 +179,20 @@ class TestRunCommand:
         exit_code = run_command(args, env={})
         assert exit_code == 1
         assert "script not found" in capsys.readouterr().err
+
+    def test_symlink_path_not_resolved(self, tmp_path):
+        # Match `python link.py`: `__file__` / `argv[0]` should reflect the
+        # path the user invoked, not the symlink target.
+        real = tmp_path / "real.py"
+        real.write_text(
+            "import pathlib, sys\n"
+            "pathlib.Path(sys.argv[0] + '.seen').write_text(\n"
+            "    repr({'argv0': sys.argv[0], 'file': __file__})\n"
+            ")\n"
+        )
+        link = tmp_path / "link.py"
+        link.symlink_to(real)
+        args = self._parse(str(link))
+        run_command(args, env={})
+        recorded = (link.parent / (link.name + ".seen")).read_text()
+        assert recorded == repr({"argv0": str(link), "file": str(link)})

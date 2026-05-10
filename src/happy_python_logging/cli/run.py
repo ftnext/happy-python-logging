@@ -56,8 +56,6 @@ def configure_logging(specs: Sequence[tuple[str, int]]) -> None:
 
 
 def run_script(script: Path, script_args: Sequence[str]) -> None:
-    script = script.resolve()
-
     if not script.is_file():
         msg = f"script not found: {script}"
         raise SystemExit(msg)
@@ -68,10 +66,15 @@ def run_script(script: Path, script_args: Sequence[str]) -> None:
     try:
         sys.argv = [str(script), *script_args]
 
+        # Mimic `python script.py`: sys.path[0] is the absolute path of the
+        # script's containing directory, but symlinks in the user-provided
+        # path are NOT followed (so `argv[0]` / `__file__` match a direct
+        # `python link.py` invocation).
+        script_dir = str(script.parent.absolute())
         if sys.path:
-            sys.path[0] = str(script.parent)
+            sys.path[0] = script_dir
         else:
-            sys.path.insert(0, str(script.parent))
+            sys.path.insert(0, script_dir)
 
         runpy.run_path(str(script), run_name="__main__")
 
