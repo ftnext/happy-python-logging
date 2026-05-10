@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import os
-import runpy
 import sys
 from typing import TYPE_CHECKING
 
@@ -64,19 +63,38 @@ def run_script(script: Path, script_args: Sequence[str]) -> None:
     old_sys_path = sys.path[:]
 
     try:
+        # Mimic `python script.py`:
+        #   sys.argv[0]   = user-given path (possibly relative, possibly a
+        #                   symlink) — exactly what was typed
+        #   __file__      = absolute path so `Path(__file__)`-based resource
+        #                   lookups don't break after the script chdirs
+        #   sys.path[0]   = absolute path of the script's containing directory
+        # `runpy.run_path` would tie `sys.argv[0]` and `__file__` to the same
+        # value (via `_ModifiedArgv0`), so we exec the compiled code with an
+        # explicit module-globals dict to keep them independent.
+        # Symlinks are NOT followed (`absolute()` vs `resolve()`).
+        absolute_script = script.absolute()
         sys.argv = [str(script), *script_args]
 
-        # Mimic `python script.py`: sys.path[0] is the absolute path of the
-        # script's containing directory, but symlinks in the user-provided
-        # path are NOT followed (so `argv[0]` / `__file__` match a direct
-        # `python link.py` invocation).
-        script_dir = str(script.parent.absolute())
+        script_dir = str(absolute_script.parent)
         if sys.path:
             sys.path[0] = script_dir
         else:
             sys.path.insert(0, script_dir)
 
-        runpy.run_path(str(script), run_name="__main__")
+        source = absolute_script.read_bytes()
+        code = compile(source, str(absolute_script), "exec")
+        exec(  # noqa: S102 - executing user-supplied script is the point
+            code,
+            {
+                "__name__": "__main__",
+                "__file__": str(absolute_script),
+                "__doc__": None,
+                "__package__": None,
+                "__loader__": None,
+                "__spec__": None,
+            },
+        )
 
     finally:
         sys.argv = old_argv

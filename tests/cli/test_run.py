@@ -197,3 +197,19 @@ class TestRunCommand:
         run_command(args, env={})
         recorded = (link.parent / (link.name + ".seen")).read_text()
         assert recorded == repr({"argv0": str(link), "file": str(link)})
+
+    def test_relative_script_path_yields_absolute_file(self, tmp_path, monkeypatch):
+        # Match `python foo.py`: `argv[0]` keeps the user-given relative path,
+        # but `__file__` is the absolute path of the script.
+        script = tmp_path / "x.py"
+        script.write_text(
+            "import pathlib, sys\n"
+            "pathlib.Path(__file__ + '.seen').write_text(\n"
+            "    repr({'argv0': sys.argv[0], 'file': __file__})\n"
+            ")\n"
+        )
+        monkeypatch.chdir(tmp_path)
+        args = self._parse("x.py")
+        run_command(args, env={})
+        recorded = (tmp_path / "x.py.seen").read_text()
+        assert recorded == repr({"argv0": "x.py", "file": str(tmp_path / "x.py")})
