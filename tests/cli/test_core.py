@@ -86,3 +86,12 @@ class TestRunForwarding:
         assert exit_code == 0
         recorded = (script.parent / (script.name + ".argv")).read_text()
         assert recorded == "['httpx=debug']"
+
+    def test_log_config_after_script_not_forwarded(self, tmp_path):
+        # `--log-config` placed after the script is consumed by the wrapper
+        # (so log_config is set); it must NOT also reach the script's argv.
+        script = self._echo_script(tmp_path)
+        exit_code = main(["run", str(script), "--log-config", "httpx=debug"])
+        assert exit_code == 0
+        recorded = (script.parent / (script.name + ".argv")).read_text()
+        assert recorded == "[]"

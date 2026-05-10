@@ -96,6 +96,74 @@ def _is_wrapper_help_request(run_argv: list[str]) -> bool:
     return has_help
 
 
+def extract_run_script_args(
+    argv: list[str], parser: argparse.ArgumentParser
+) -> list[str]:
+    """Find the script positional in `argv`, validate wrapper typos, and
+    return the args forwarded to the script (preserving `--`).
+
+    Mirrors what `main()` does for the `run` subcommand so tests can build
+    the same Namespace shape via :func:`build_parser` + this helper without
+    diverging from the real CLI path.
+
+    Raises ``SystemExit`` (via ``parser.error``) on typos or missing script.
+    """
+    # Locate the `script` positional in argv by walking the wrapper
+    # portion. Track unknown wrapper-side flags by their argv position
+    # (not value) so a script_arg that happens to equal `"run"` or a
+    # `--log-config` value isn't mistaken for a typo.
+    run_idx = argv.index("run")
+    script_idx: int | None = None
+    unknown_wrapper: list[str] = []
+    i = run_idx + 1
+    while i < len(argv):
+        arg = argv[i]
+        if arg == "--":
+            # argparse positional separator: next token (if any) is script.
+            i += 1
+            if i < len(argv):
+                script_idx = i
+            break
+        if arg in _LOG_CONFIG_FLAGS:
+            i += 2
+            continue
+        if arg.startswith("--log-config=") or arg.startswith("--log_config="):
+            i += 1
+            continue
+        if arg.startswith("-"):
+            unknown_wrapper.append(arg)
+            i += 1
+            continue
+        script_idx = i
+        break
+    if script_idx is None:
+        parser.error("script is required")
+
+    # Top-level parser has no flags of its own, so anything before `run` is
+    # a stray wrapper arg (e.g. `happy-python-logging --bogus run …`).
+    bad = list(argv[:run_idx]) + unknown_wrapper
+    if bad:
+        parser.error(f"unrecognized arguments: {' '.join(bad)}")
+
+    script_args = list(argv[script_idx + 1 :])
+    # `--log-config` after the script was already consumed by argparse into
+    # `args.log_config`; drop those tokens so we don't ALSO forward them to
+    # the script. Stop at `--`: everything after it is verbatim.
+    j = 0
+    while j < len(script_args):
+        arg = script_args[j]
+        if arg == "--":
+            break
+        if arg in _LOG_CONFIG_FLAGS:
+            del script_args[j : j + 2]
+            continue
+        if arg.startswith("--log-config=") or arg.startswith("--log_config="):
+            del script_args[j]
+            continue
+        j += 1
+    return script_args
+
+
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
@@ -108,44 +176,7 @@ def main(argv: list[str] | None = None) -> int:
     args, remaining = parser.parse_known_args(argv)
 
     if args.command == "run":
-        # Locate the `script` positional in argv by walking the wrapper
-        # portion. Track unknown wrapper-side flags by their argv position
-        # (not value) so a script_arg that happens to equal `"run"` or a
-        # `--log-config` value isn't mistaken for a typo.
-        run_idx = argv.index("run")
-        script_idx: int | None = None
-        unknown_wrapper: list[str] = []
-        i = run_idx + 1
-        while i < len(argv):
-            arg = argv[i]
-            if arg == "--":
-                # argparse positional separator: next token (if any) is script.
-                i += 1
-                if i < len(argv):
-                    script_idx = i
-                break
-            if arg in _LOG_CONFIG_FLAGS:
-                i += 2
-                continue
-            if arg.startswith("--log-config=") or arg.startswith("--log_config="):
-                i += 1
-                continue
-            if arg.startswith("-"):
-                unknown_wrapper.append(arg)
-                i += 1
-                continue
-            script_idx = i
-            break
-        if script_idx is None:
-            parser.error("script is required")
-
-        # Top-level parser has no flags of its own, so anything before `run`
-        # is a stray wrapper arg (e.g. `happy-python-logging --bogus run …`).
-        bad = list(argv[:run_idx]) + unknown_wrapper
-        if bad:
-            parser.error(f"unrecognized arguments: {' '.join(bad)}")
-
-        args.script_args = argv[script_idx + 1 :]
+        args.script_args = extract_run_script_args(argv, parser)
         return run_command(args)
 
     # For any non-`run` invocation, leftover args (e.g. `--bogus`) are a typo

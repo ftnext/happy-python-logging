@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from happy_python_logging.cli.core import build_parser, main
+from happy_python_logging.cli.core import build_parser, extract_run_script_args, main
 from happy_python_logging.cli.run import (
     _RunHandler,
     configure_logging,
@@ -73,9 +73,10 @@ class TestConfigureLogging:
 class TestRunCommand:
     def _parse(self, *argv: str):
         """Parse argv the same way main() does."""
+        full = ["run", *argv]
         parser = build_parser()
-        ns, remaining = parser.parse_known_args(["run", *argv])
-        ns.script_args = remaining
+        ns, _ = parser.parse_known_args(full)
+        ns.script_args = extract_run_script_args(full, parser)
         return ns
 
     def _make_args(self, script: Path, log_config: str | None = None):
