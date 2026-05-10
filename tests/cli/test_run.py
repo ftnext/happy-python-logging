@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from happy_python_logging.cli.core import build_parser
+from happy_python_logging.cli.core import build_parser, main
 from happy_python_logging.cli.run import (
     _RunHandler,
     configure_logging,
@@ -122,6 +122,21 @@ class TestRunCommand:
         run_command(args, env={})
         assert logging.getLogger("httpx").level == logging.DEBUG
         assert args.script_args == []
+
+    @pytest.mark.parametrize(
+        "argv",
+        [
+            ["run", "--help"],
+            ["run", "-h"],
+            ["run", "--log-config", "httpx=debug", "--help"],
+        ],
+    )
+    def test_help_without_script_prints_wrapper_help(self, capsys, argv):
+        exit_code = main(argv)
+        assert exit_code == 0
+        out = capsys.readouterr().out
+        assert "happy-python-logging run" in out
+        assert "--log-config" in out
 
     @pytest.mark.parametrize("flag", ["-h", "--help"])
     def test_forwards_help_flags(self, tmp_path, flag):
