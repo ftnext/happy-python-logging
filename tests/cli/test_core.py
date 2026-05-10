@@ -30,3 +30,10 @@ class TestNoCommand:
         with pytest.raises(SystemExit) as excinfo:
             main(["--bogus"])
         assert excinfo.value.code == 2
+
+    def test_unknown_arg_before_run_errors(self):
+        # `--bogus` precedes `run`, so it must not be silently forwarded as a
+        # script argument; treat it as a top-level typo like `snippet` does.
+        with pytest.raises(SystemExit) as excinfo:
+            main(["--bogus", "run", "script.py"])
+        assert excinfo.value.code == 2

@@ -108,6 +108,13 @@ def main(argv: list[str] | None = None) -> int:
     args, remaining = parser.parse_known_args(argv)
 
     if args.command == "run":
+        # Args that appeared before `run` in argv can't be script args; if they
+        # weren't consumed, they're top-level typos.
+        run_idx = argv.index("run")
+        pre_run = set(argv[:run_idx])
+        bad = [a for a in remaining if a in pre_run]
+        if bad:
+            parser.error(f"unrecognized arguments: {' '.join(bad)}")
         args.script_args = remaining
         return run_command(args)
 
