@@ -68,13 +68,19 @@ class TestConfigureLogging:
 
 @pytest.mark.usefixtures("reset_root_logger")
 class TestRunCommand:
-    def _make_args(self, script: Path, log_config: str | None = None):
+    def _parse(self, *argv: str):
+        """Parse argv the same way main() does."""
         parser = build_parser()
-        argv = ["run"]
+        ns, remaining = parser.parse_known_args(["run", *argv])
+        ns.script_args = remaining
+        return ns
+
+    def _make_args(self, script: Path, log_config: str | None = None):
+        argv = []
         if log_config is not None:
             argv += ["--log-config", log_config]
         argv += [str(script)]
-        return parser.parse_args(argv)
+        return self._parse(*argv)
 
     def test_propagates_script_exit_code(self, tmp_path):
         script = tmp_path / "exit7.py"
@@ -108,6 +114,25 @@ class TestRunCommand:
         args = self._make_args(script, log_config="httpx=debug")
         run_command(args, env={"PYTHON_LOG": "httpx=warning"})
         assert logging.getLogger("httpx").level == logging.DEBUG
+
+    def test_log_config_after_script(self, tmp_path):
+        script = tmp_path / "ok.py"
+        script.write_text("x = 1\n")
+        args = self._parse(str(script), "--log-config", "httpx=debug")
+        run_command(args, env={})
+        assert logging.getLogger("httpx").level == logging.DEBUG
+        assert args.script_args == []
+
+    def test_forwards_script_args(self, tmp_path):
+        script = tmp_path / "echo.py"
+        script.write_text(
+            "import sys, pathlib\n"
+            "pathlib.Path(sys.argv[0] + '.argv').write_text(repr(sys.argv[1:]))\n"
+        )
+        args = self._parse(str(script), "--flag", "value", "positional")
+        run_command(args, env={})
+        recorded = (script.parent / (script.name + ".argv")).read_text()
+        assert recorded == "['--flag', 'value', 'positional']"
 
     def test_missing_script_returns_nonzero(self, tmp_path, capsys):
         args = argparse.Namespace(

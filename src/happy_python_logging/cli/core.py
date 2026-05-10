@@ -34,29 +34,30 @@ def build_parser() -> argparse.ArgumentParser:
         help='RUST_LOG-style spec, e.g. "httpx=debug,urllib3=info" (also via PYTHON_LOG env var)',
     )
     run_parser.add_argument("script", type=Path, help="Path to the Python script")
-    run_parser.add_argument(
-        "script_args",
-        nargs=argparse.REMAINDER,
-        help="Arguments forwarded to the script",
-    )
+    # script_args is collected via parse_known_args in main(), so any flags after
+    # the script path (other than our own --log-config) flow through to the script.
 
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
-    args = parser.parse_args(argv)
+    args, remaining = parser.parse_known_args(argv)
 
     if args.command is None:
         parser.print_help()
         return 1
 
+    if args.command == "run":
+        args.script_args = remaining
+        return run_command(args)
+
+    if remaining:
+        parser.error(f"unrecognized arguments: {' '.join(remaining)}")
+
     if args.command == "snippet":
         sys.stdout.write(SNIPPETS[args.name])
         return 0
-
-    if args.command == "run":
-        return run_command(args)
 
     return 1
 
