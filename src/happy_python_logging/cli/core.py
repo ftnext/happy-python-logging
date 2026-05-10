@@ -108,13 +108,13 @@ def main(argv: list[str] | None = None) -> int:
     args, remaining = parser.parse_known_args(argv)
 
     if args.command == "run":
-        # Locate the `script` positional in argv. Anything after it is
-        # forwarded verbatim to the script (preserving `--`); anything before
-        # it that wasn't consumed by the parser is a wrapper-side typo
-        # (e.g. a top-level `--bogus`, or `--log-confg` between `run` and
-        # `script`).
+        # Locate the `script` positional in argv by walking the wrapper
+        # portion. Track unknown wrapper-side flags by their argv position
+        # (not value) so a script_arg that happens to equal `"run"` or a
+        # `--log-config` value isn't mistaken for a typo.
         run_idx = argv.index("run")
         script_idx: int | None = None
+        unknown_wrapper: list[str] = []
         i = run_idx + 1
         while i < len(argv):
             arg = argv[i]
@@ -131,6 +131,7 @@ def main(argv: list[str] | None = None) -> int:
                 i += 1
                 continue
             if arg.startswith("-"):
+                unknown_wrapper.append(arg)
                 i += 1
                 continue
             script_idx = i
@@ -138,8 +139,9 @@ def main(argv: list[str] | None = None) -> int:
         if script_idx is None:
             parser.error("script is required")
 
-        pre_script = set(argv[:script_idx])
-        bad = [a for a in remaining if a in pre_script]
+        # Top-level parser has no flags of its own, so anything before `run`
+        # is a stray wrapper arg (e.g. `happy-python-logging --bogus run …`).
+        bad = list(argv[:run_idx]) + unknown_wrapper
         if bad:
             parser.error(f"unrecognized arguments: {' '.join(bad)}")
 

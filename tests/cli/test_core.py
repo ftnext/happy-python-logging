@@ -48,16 +48,41 @@ class TestNoCommand:
 
 
 class TestRunForwarding:
-    def test_preserves_double_dash_in_script_args(self, tmp_path, capsys):
-        # `--` should reach the script verbatim so scripts that need a literal
-        # `--` (or use it as their own separator) behave like `python script.py
-        # -- --flag`.
+    @staticmethod
+    def _echo_script(tmp_path):
         script = tmp_path / "echo.py"
         script.write_text(
             "import sys, pathlib\n"
             "pathlib.Path(sys.argv[0] + '.argv').write_text(repr(sys.argv[1:]))\n"
         )
+        return script
+
+    def test_preserves_double_dash_in_script_args(self, tmp_path):
+        # `--` should reach the script verbatim so scripts that need a literal
+        # `--` (or use it as their own separator) behave like `python script.py
+        # -- --flag`.
+        script = self._echo_script(tmp_path)
         exit_code = main(["run", str(script), "--", "--flag"])
         assert exit_code == 0
         recorded = (script.parent / (script.name + ".argv")).read_text()
         assert recorded == "['--', '--flag']"
+
+    def test_script_arg_matching_run_token_is_forwarded(self, tmp_path):
+        # A script arg that happens to equal "run" must reach the script;
+        # position, not value, decides whether something is a wrapper typo.
+        script = self._echo_script(tmp_path)
+        exit_code = main(["run", str(script), "run"])
+        assert exit_code == 0
+        recorded = (script.parent / (script.name + ".argv")).read_text()
+        assert recorded == "['run']"
+
+    def test_script_arg_matching_log_config_value_is_forwarded(self, tmp_path):
+        # A script arg coinciding with the --log-config value must still be
+        # forwarded; the wrapper consumed that value at its own position.
+        script = self._echo_script(tmp_path)
+        exit_code = main(
+            ["run", "--log-config", "httpx=debug", str(script), "httpx=debug"]
+        )
+        assert exit_code == 0
+        recorded = (script.parent / (script.name + ".argv")).read_text()
+        assert recorded == "['httpx=debug']"
