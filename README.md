@@ -66,6 +66,30 @@ OrFilter("libA", "libB") | logging.Filter("app.important")
 # reverse order also supported
 ```
 
+### CLI: `happy-python-logging run` (experimental)
+
+Run any Python script with quick library-level logging — RUST_LOG style:
+
+```console
+$ happy-python-logging run example_script.py --log-config httpx=debug
+```
+
+Multiple loggers can be set at once, comma-separated:
+
+```console
+$ happy-python-logging run example_script.py --log-config httpx=debug,urllib3=info
+```
+
+The same spec can be supplied via the `PYTHON_LOG` environment variable:
+
+```console
+$ PYTHON_LOG=httpx=debug happy-python-logging run example_script.py
+```
+
+A bare level (e.g. `--log-config debug`) sets the root logger.
+The `StreamHandler` (stderr) and `Formatter` are fixed — the goal is to get
+library logs onto the console with one flag.
+
 ## License
 
 `happy-python-logging` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
