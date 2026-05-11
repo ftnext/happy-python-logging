@@ -16,7 +16,7 @@ _VALID_LEVEL_NAMES = {"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "NOTSET"}
 # RUST_LOG-style aliases mapped to Python's level names.
 _LEVEL_ALIASES = {"WARN": "WARNING"}
 
-_DEFAULT_FORMAT = "%(asctime)s %(levelname)s %(name)s: %(message)s"
+_DEFAULT_FORMAT = "%(asctime)s | %(levelname)s (%(name)s) | %(filename)s:%(funcName)s:%(lineno)d - %(message)s"
 
 
 class _RunHandler(logging.StreamHandler):
