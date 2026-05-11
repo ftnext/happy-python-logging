@@ -73,19 +73,20 @@ def run_script(script: Path, script_args: Sequence[str]) -> None:
         #                            typed
         #   __file__               = absolute path so `Path(__file__)`-based
         #                            resource lookups don't break after the
-        #                            script chdirs
-        #   sys.path[0]            = absolute path of the script's
-        #                            containing directory
+        #                            script chdirs (symlinks NOT followed)
+        #   sys.path[0]            = absolute path of the *real* script's
+        #                            containing directory (symlinks ARE
+        #                            followed, so `import helper` resolves
+        #                            in the directory next to the real file)
         #   sys.modules['__main__'] = a fresh module so `import __main__`
         #                            inside the script resolves to itself
         # `runpy.run_path` would tie `sys.argv[0]` and `__file__` to the same
         # value (via `_ModifiedArgv0`), so we install a `__main__` module
         # and exec into its `__dict__` directly to keep them independent.
-        # Symlinks are NOT followed (`absolute()` vs `resolve()`).
         absolute_script = script.absolute()
         sys.argv = [str(script), *script_args]
 
-        script_dir = str(absolute_script.parent)
+        script_dir = str(script.resolve().parent)
         if sys.path:
             sys.path[0] = script_dir
         else:

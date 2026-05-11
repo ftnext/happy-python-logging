@@ -267,3 +267,24 @@ class TestRunCommand:
         run_command(args, env={})
         recorded = (script.parent / (script.name + ".seen")).read_text()
         assert recorded == "builtins"
+
+    def test_sys_path_uses_real_script_directory(self, tmp_path):
+        # `python link.py` sets `sys.path[0]` to the REAL script's directory
+        # (symlinks resolved), so a sibling module next to the real file can
+        # be imported. The symlink's parent directory may not contain it.
+        real_dir = tmp_path / "realdir"
+        real_dir.mkdir()
+        (real_dir / "helper.py").write_text("MARKER = 'real'\n")
+        real_script = real_dir / "real.py"
+        real_script.write_text(
+            "import helper, pathlib, sys\n"
+            "pathlib.Path(sys.argv[0] + '.seen').write_text(helper.MARKER)\n"
+        )
+        link_dir = tmp_path / "linkdir"
+        link_dir.mkdir()
+        link = link_dir / "link.py"
+        link.symlink_to(real_script)
+        args = self._parse(str(link))
+        run_command(args, env={})
+        recorded = (link.parent / (link.name + ".seen")).read_text()
+        assert recorded == "real"
