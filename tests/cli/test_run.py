@@ -241,3 +241,29 @@ class TestRunCommand:
         run_command(args, env={})
         recorded = (script.parent / (script.name + ".seen")).read_bytes()
         assert recorded == script.read_bytes()
+
+    def test_main_cached_is_defined(self, tmp_path):
+        # `python script.py` defines `__cached__` as None on `__main__`;
+        # scripts that reference it must not crash with NameError.
+        script = tmp_path / "reads_cached.py"
+        script.write_text(
+            "import pathlib\n"
+            "pathlib.Path(__file__ + '.seen').write_text(repr(__cached__))\n"
+        )
+        args = self._parse(str(script))
+        run_command(args, env={})
+        recorded = (script.parent / (script.name + ".seen")).read_text()
+        assert recorded == "None"
+
+    def test_main_builtins_is_module(self, tmp_path):
+        # `python script.py` sets `__builtins__` to the `builtins` MODULE on
+        # `__main__`, not its dict — `__builtins__.__name__` must work.
+        script = tmp_path / "reads_builtins.py"
+        script.write_text(
+            "import pathlib\n"
+            "pathlib.Path(__file__ + '.seen').write_text(__builtins__.__name__)\n"
+        )
+        args = self._parse(str(script))
+        run_command(args, env={})
+        recorded = (script.parent / (script.name + ".seen")).read_text()
+        assert recorded == "builtins"

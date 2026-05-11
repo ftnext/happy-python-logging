@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import importlib.machinery
 import logging
 import os
@@ -101,6 +102,12 @@ def run_script(script: Path, script_args: Sequence[str]) -> None:
         main_module.__loader__ = loader
         main_module.__package__ = None
         main_module.__spec__ = None
+        main_module.__cached__ = None
+        # `python script.py` seeds `__builtins__` with the `builtins` module
+        # (not its `__dict__`); seed it ourselves before exec, otherwise
+        # Python's automatic injection installs the dict and code like
+        # `__builtins__.__name__` breaks.
+        main_module.__dict__["__builtins__"] = builtins
         sys.modules["__main__"] = main_module
 
         source = absolute_script.read_bytes()
