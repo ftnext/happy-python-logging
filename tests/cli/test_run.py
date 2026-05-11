@@ -174,7 +174,7 @@ class TestRunCommand:
     def test_missing_script_returns_nonzero(self, tmp_path, capsys):
         args = argparse.Namespace(
             log_config=None,
-            script=tmp_path / "does_not_exist.py",
+            script=str(tmp_path / "does_not_exist.py"),
             script_args=[],
         )
         exit_code = run_command(args, env={})
@@ -267,6 +267,20 @@ class TestRunCommand:
         run_command(args, env={})
         recorded = (script.parent / (script.name + ".seen")).read_text()
         assert recorded == "builtins"
+
+    def test_dot_slash_prefix_preserved_in_argv(self, tmp_path, monkeypatch):
+        # `python ./x.py` keeps `./x.py` in `sys.argv[0]`. The wrapper must
+        # not normalize the token via `Path` and drop the `./` prefix.
+        script = tmp_path / "x.py"
+        script.write_text(
+            "import sys, pathlib\n"
+            "pathlib.Path(__file__ + '.seen').write_text(sys.argv[0])\n"
+        )
+        monkeypatch.chdir(tmp_path)
+        args = self._parse("./x.py")
+        run_command(args, env={})
+        recorded = (tmp_path / "x.py.seen").read_text()
+        assert recorded == "./x.py"
 
     def test_sys_path_uses_real_script_directory(self, tmp_path):
         # `python link.py` sets `sys.path[0]` to the REAL script's directory

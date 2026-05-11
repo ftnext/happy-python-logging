@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import sys
-from pathlib import Path
 
 from happy_python_logging.cli.run import run_command
 from happy_python_logging.cli.snippets import SNIPPETS
@@ -28,7 +27,9 @@ def _build_run_parser() -> argparse.ArgumentParser:
         default=None,
         help='RUST_LOG-style spec, e.g. "httpx=debug,urllib3=info" (also via PYTHON_LOG env var)',
     )
-    run_parser.add_argument("script", type=Path, help="Path to the Python script")
+    # Keep `script` as the raw user-typed string (no `type=Path`) so
+    # `python ./x.py`-style invocations preserve `./` in `sys.argv[0]`.
+    run_parser.add_argument("script", help="Path to the Python script")
     # script_args is collected via parse_known_args in main(); any flags after
     # the script path (other than our own --log-config) flow through to the script.
     return run_parser
@@ -61,7 +62,9 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help='RUST_LOG-style spec, e.g. "httpx=debug,urllib3=info" (also via PYTHON_LOG env var)',
     )
-    run_parser.add_argument("script", type=Path, help="Path to the Python script")
+    # Keep `script` as the raw user-typed string (no `type=Path`) so
+    # `python ./x.py`-style invocations preserve `./` in `sys.argv[0]`.
+    run_parser.add_argument("script", help="Path to the Python script")
 
     return parser
 

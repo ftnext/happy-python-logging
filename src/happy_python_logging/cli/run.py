@@ -6,11 +6,11 @@ import logging
 import os
 import sys
 import types
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
-    from pathlib import Path
 
 _VALID_LEVEL_NAMES = {"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "NOTSET"}
 # RUST_LOG-style aliases mapped to Python's level names.
@@ -57,8 +57,12 @@ def configure_logging(specs: Sequence[tuple[str, int]]) -> None:
         logging.getLogger(name).setLevel(level)
 
 
-def run_script(script: Path, script_args: Sequence[str]) -> None:
-    if not script.is_file():
+def run_script(script: str, script_args: Sequence[str]) -> None:
+    # Keep `script` as the raw user-typed token so `sys.argv[0]` matches
+    # `python <token>` (e.g. `./x.py` stays `./x.py`, not normalized to
+    # `x.py`). Filesystem operations go through `Path` locally.
+    script_path = Path(script)
+    if not script_path.is_file():
         msg = f"script not found: {script}"
         raise SystemExit(msg)
 
@@ -83,10 +87,10 @@ def run_script(script: Path, script_args: Sequence[str]) -> None:
         # `runpy.run_path` would tie `sys.argv[0]` and `__file__` to the same
         # value (via `_ModifiedArgv0`), so we install a `__main__` module
         # and exec into its `__dict__` directly to keep them independent.
-        absolute_script = script.absolute()
-        sys.argv = [str(script), *script_args]
+        absolute_script = script_path.absolute()
+        sys.argv = [script, *script_args]
 
-        script_dir = str(script.resolve().parent)
+        script_dir = str(script_path.resolve().parent)
         if sys.path:
             sys.path[0] = script_dir
         else:
