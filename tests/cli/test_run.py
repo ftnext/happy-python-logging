@@ -227,3 +227,17 @@ class TestRunCommand:
         run_command(args, env={})
         recorded = (script.parent / (script.name + ".seen")).read_text()
         assert recorded == str(script)
+
+    def test_main_loader_supports_get_data(self, tmp_path):
+        # `python script.py` sets `__main__.__loader__` to a real
+        # `SourceFileLoader`, so `__loader__.get_data(__file__)` works.
+        script = tmp_path / "uses_loader.py"
+        script.write_text(
+            "import pathlib\n"
+            "data = __loader__.get_data(__file__)\n"
+            "pathlib.Path(__file__ + '.seen').write_bytes(data)\n"
+        )
+        args = self._parse(str(script))
+        run_command(args, env={})
+        recorded = (script.parent / (script.name + ".seen")).read_bytes()
+        assert recorded == script.read_bytes()

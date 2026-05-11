@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.machinery
 import logging
 import os
 import sys
@@ -89,9 +90,15 @@ def run_script(script: Path, script_args: Sequence[str]) -> None:
         else:
             sys.path.insert(0, script_dir)
 
+        # `python script.py` sets `__main__.__loader__` to a real
+        # `SourceFileLoader`, which scripts use for e.g.
+        # `__loader__.get_data(__file__)`. Match that.
+        loader = importlib.machinery.SourceFileLoader(
+            "__main__", str(absolute_script)
+        )
         main_module = types.ModuleType("__main__")
         main_module.__file__ = str(absolute_script)
-        main_module.__loader__ = None
+        main_module.__loader__ = loader
         main_module.__package__ = None
         main_module.__spec__ = None
         sys.modules["__main__"] = main_module
