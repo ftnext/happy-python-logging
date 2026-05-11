@@ -192,6 +192,42 @@ class TestRunCommand:
         assert exit_code == 1
         assert "invalid log level" in capsys.readouterr().err
 
+    def test_does_not_close_caller_logging_handlers(self, tmp_path):
+        # `run_command` should clean up only the `_RunHandler` it adds, not
+        # call `logging.shutdown()`, which would close every handler in the
+        # process and break library-style callers that had their own
+        # `FileHandler` etc. already in place.
+        class _FlagHandler(logging.Handler):
+            def __init__(self):
+                super().__init__()
+                self.closed = False
+
+            def close(self):
+                self.closed = True
+                super().close()
+
+            def emit(self, record):  # pragma: no cover - not exercised
+                pass
+
+        caller = _FlagHandler()
+        logging.getLogger().addHandler(caller)
+        try:
+            script = tmp_path / "ok.py"
+            script.write_text("x = 1\n")
+            args = self._make_args(script, log_config="httpx=debug")
+            run_command(args, env={})
+            assert not caller.closed
+            assert caller in logging.getLogger().handlers
+            # Our own handler is gone again.
+            own = [
+                h
+                for h in logging.getLogger().handlers
+                if isinstance(h, _RunHandler)
+            ]
+            assert own == []
+        finally:
+            logging.getLogger().removeHandler(caller)
+
     def test_symlink_path_not_resolved(self, tmp_path):
         # Match `python link.py`: `__file__` / `argv[0]` should reflect the
         # path the user invoked, not the symlink target.

@@ -155,6 +155,13 @@ def run_command(args, env: Mapping[str, str] | None = None) -> int:
         sys.stderr.write(f"{e.code}\n")
         return 1
     finally:
-        logging.shutdown()
+        # Only tear down the handler we installed. `logging.shutdown()` would
+        # close every handler in the process, breaking library-style callers
+        # that had their own handlers in place before run_command was invoked.
+        root = logging.getLogger()
+        for handler in list(root.handlers):
+            if isinstance(handler, _RunHandler):
+                root.removeHandler(handler)
+                handler.close()
 
     return 0
