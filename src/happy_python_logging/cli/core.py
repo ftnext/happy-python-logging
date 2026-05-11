@@ -70,13 +70,18 @@ def _is_wrapper_help_request(run_argv: list[str]) -> bool:
     """True if argv (after the `run` token) asks for wrapper help.
 
     The user wants wrapper help when `-h`/`--help` appears in the wrapper-side
-    portion of argv (i.e. before any script-like positional). With a script
-    present, `-h`/`--help` is forwarded to the script instead.
+    portion of argv (i.e. before any script-like positional, and before any
+    `--` separator). With a script present, `-h`/`--help` is forwarded to the
+    script instead.
     """
     has_help = False
     i = 0
     while i < len(run_argv):
         arg = run_argv[i]
+        if arg == "--":
+            # `--` terminates wrapper option parsing; subsequent `--help`
+            # belongs to the script side, never the wrapper.
+            return has_help
         if arg in _HELP_FLAGS:
             has_help = True
             i += 1

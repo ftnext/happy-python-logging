@@ -106,3 +106,19 @@ class TestRunForwarding:
         assert exit_code == 0
         recorded = (script.parent / (script.name + ".argv")).read_text()
         assert recorded == "['--log-config', 'httpx=debug']"
+
+    def test_double_dash_protects_help_like_script_path(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        # `--` terminates wrapper option parsing — a script literally named
+        # `--help` after `--` must be executed, not trigger wrapper help.
+        odd = tmp_path / "--help"
+        odd.write_text(
+            "import pathlib\n"
+            "pathlib.Path(__file__ + '.seen').write_text('ran')\n"
+        )
+        monkeypatch.chdir(tmp_path)
+        exit_code = main(["run", "--", "--help"])
+        assert exit_code == 0
+        assert "happy-python-logging run" not in capsys.readouterr().out
+        assert (tmp_path / "--help.seen").read_text() == "ran"
