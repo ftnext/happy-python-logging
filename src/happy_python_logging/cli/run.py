@@ -138,11 +138,14 @@ def run_command(args, env: Mapping[str, str] | None = None) -> int:
     if log_config is None:
         log_config = env.get("PYTHON_LOG")
 
-    if log_config:
-        specs = parse_log_config(log_config)
-        configure_logging(specs)
-
     try:
+        if log_config:
+            # `parse_log_config` raises `SystemExit` on invalid levels; catch
+            # it here too so library-style callers of `run_command` get a
+            # consistent exit-code return instead of a propagated exception.
+            specs = parse_log_config(log_config)
+            configure_logging(specs)
+
         run_script(args.script, args.script_args)
     except SystemExit as e:
         if e.code is None:

@@ -181,6 +181,17 @@ class TestRunCommand:
         assert exit_code == 1
         assert "script not found" in capsys.readouterr().err
 
+    def test_invalid_log_config_returns_nonzero(self, tmp_path, capsys):
+        # `parse_log_config` raises SystemExit on invalid levels; `run_command`
+        # must normalize that into a return-code, same as `script not found`,
+        # so library-style callers don't see an unwrapped exception.
+        script = tmp_path / "ok.py"
+        script.write_text("x = 1\n")
+        args = self._parse(str(script), "--log-config", "httpx=bogus")
+        exit_code = run_command(args, env={})
+        assert exit_code == 1
+        assert "invalid log level" in capsys.readouterr().err
+
     def test_symlink_path_not_resolved(self, tmp_path):
         # Match `python link.py`: `__file__` / `argv[0]` should reflect the
         # path the user invoked, not the symlink target.
