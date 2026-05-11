@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
+import types
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -61,17 +62,23 @@ def run_script(script: Path, script_args: Sequence[str]) -> None:
 
     old_argv = sys.argv[:]
     old_sys_path = sys.path[:]
+    old_main = sys.modules.get("__main__")
 
     try:
         # Mimic `python script.py`:
-        #   sys.argv[0]   = user-given path (possibly relative, possibly a
-        #                   symlink) — exactly what was typed
-        #   __file__      = absolute path so `Path(__file__)`-based resource
-        #                   lookups don't break after the script chdirs
-        #   sys.path[0]   = absolute path of the script's containing directory
+        #   sys.argv[0]            = user-given path (possibly relative,
+        #                            possibly a symlink) — exactly what was
+        #                            typed
+        #   __file__               = absolute path so `Path(__file__)`-based
+        #                            resource lookups don't break after the
+        #                            script chdirs
+        #   sys.path[0]            = absolute path of the script's
+        #                            containing directory
+        #   sys.modules['__main__'] = a fresh module so `import __main__`
+        #                            inside the script resolves to itself
         # `runpy.run_path` would tie `sys.argv[0]` and `__file__` to the same
-        # value (via `_ModifiedArgv0`), so we exec the compiled code with an
-        # explicit module-globals dict to keep them independent.
+        # value (via `_ModifiedArgv0`), so we install a `__main__` module
+        # and exec into its `__dict__` directly to keep them independent.
         # Symlinks are NOT followed (`absolute()` vs `resolve()`).
         absolute_script = script.absolute()
         sys.argv = [str(script), *script_args]
@@ -82,23 +89,26 @@ def run_script(script: Path, script_args: Sequence[str]) -> None:
         else:
             sys.path.insert(0, script_dir)
 
+        main_module = types.ModuleType("__main__")
+        main_module.__file__ = str(absolute_script)
+        main_module.__loader__ = None
+        main_module.__package__ = None
+        main_module.__spec__ = None
+        sys.modules["__main__"] = main_module
+
         source = absolute_script.read_bytes()
         code = compile(source, str(absolute_script), "exec")
         exec(  # noqa: S102 - executing user-supplied script is the point
-            code,
-            {
-                "__name__": "__main__",
-                "__file__": str(absolute_script),
-                "__doc__": None,
-                "__package__": None,
-                "__loader__": None,
-                "__spec__": None,
-            },
+            code, main_module.__dict__
         )
 
     finally:
         sys.argv = old_argv
         sys.path[:] = old_sys_path
+        if old_main is not None:
+            sys.modules["__main__"] = old_main
+        else:
+            sys.modules.pop("__main__", None)
 
 
 def run_command(args, env: Mapping[str, str] | None = None) -> int:

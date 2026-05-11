@@ -95,3 +95,14 @@ class TestRunForwarding:
         assert exit_code == 0
         recorded = (script.parent / (script.name + ".argv")).read_text()
         assert recorded == "[]"
+
+    def test_pre_script_double_dash_forwards_log_config(self, tmp_path):
+        # A leading `--` ends wrapper option parsing — `--log-config`
+        # afterward is a script argument and must reach the script verbatim.
+        script = self._echo_script(tmp_path)
+        exit_code = main(
+            ["run", "--", str(script), "--log-config", "httpx=debug"]
+        )
+        assert exit_code == 0
+        recorded = (script.parent / (script.name + ".argv")).read_text()
+        assert recorded == "['--log-config', 'httpx=debug']"

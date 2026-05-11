@@ -115,11 +115,13 @@ def extract_run_script_args(
     run_idx = argv.index("run")
     script_idx: int | None = None
     unknown_wrapper: list[str] = []
+    saw_separator = False
     i = run_idx + 1
     while i < len(argv):
         arg = argv[i]
         if arg == "--":
             # argparse positional separator: next token (if any) is script.
+            saw_separator = True
             i += 1
             if i < len(argv):
                 script_idx = i
@@ -146,6 +148,11 @@ def extract_run_script_args(
         parser.error(f"unrecognized arguments: {' '.join(bad)}")
 
     script_args = list(argv[script_idx + 1 :])
+    if saw_separator:
+        # User explicitly ended wrapper option parsing with `--` before the
+        # script, so argparse didn't consume any `--log-config` after it —
+        # forward everything verbatim.
+        return script_args
     # `--log-config` after the script was already consumed by argparse into
     # `args.log_config`; drop those tokens so we don't ALSO forward them to
     # the script. Stop at `--`: everything after it is verbatim.

@@ -213,3 +213,17 @@ class TestRunCommand:
         run_command(args, env={})
         recorded = (tmp_path / "x.py.seen").read_text()
         assert recorded == repr({"argv0": "x.py", "file": str(tmp_path / "x.py")})
+
+    def test_import_main_resolves_to_script(self, tmp_path):
+        # `python script.py` makes `sys.modules['__main__']` the script
+        # itself, so `import __main__` from inside the script sees the
+        # script's globals (e.g. `__main__.__file__`).
+        script = tmp_path / "self_introspect.py"
+        script.write_text(
+            "import __main__, pathlib\n"
+            "pathlib.Path(__file__ + '.seen').write_text(__main__.__file__)\n"
+        )
+        args = self._parse(str(script))
+        run_command(args, env={})
+        recorded = (script.parent / (script.name + ".seen")).read_text()
+        assert recorded == str(script)
