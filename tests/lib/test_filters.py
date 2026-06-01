@@ -119,6 +119,16 @@ class TestNotFilter:
         assert combined.filter(logging.makeLogRecord({"name": "ham"}))
         assert combined.filter(logging.makeLogRecord({"name": "quux"}))
 
+    def test_wraps_callable_filter(self):
+        # logging accepts callables as filters, so NotFilter must too
+        combined = NotFilter(lambda record: record.name != "spam")
+
+        # The callable passes non-"spam", so NotFilter rejects them
+        assert not combined.filter(logging.makeLogRecord({"name": "ham"}))
+        assert not combined.filter(logging.makeLogRecord({"name": "other"}))
+        # The callable rejects "spam", so NotFilter passes it
+        assert combined.filter(logging.makeLogRecord({"name": "spam"}))
+
     def test_double_negation(self):
         # NotFilter(NotFilter(...)) restores the original behavior
         combined = NotFilter(NotFilter(logging.Filter("spam")))
