@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-from happy_python_logging.lib.filters import OrFilter
+from happy_python_logging.lib.filters import NotFilter, OrFilter
 
 
 class TestOrFilter:
@@ -87,4 +87,42 @@ class TestOrFilter:
         assert combined.filter(logging.makeLogRecord({"name": "lib1.module"}))
         assert combined.filter(logging.makeLogRecord({"name": "app"}))
         assert combined.filter(logging.makeLogRecord({"name": "service.api"}))
+        assert not combined.filter(logging.makeLogRecord({"name": "other"}))
+
+
+class TestNotFilter:
+    @pytest.fixture
+    def handler_under_test(self):
+        # Invert a standard logging.Filter
+        return NotFilter(logging.Filter("spam"))
+
+    @pytest.mark.parametrize("name", ["other", "ham", "foo.spam"])
+    def test_pass(self, name, handler_under_test):
+        # logging.Filter("spam") rejects these, so NotFilter passes them
+        record = logging.makeLogRecord({"name": name})
+        assert handler_under_test.filter(record)
+
+    @pytest.mark.parametrize("name", ["spam", "spam.eggs"])
+    def test_reject(self, name, handler_under_test):
+        # logging.Filter("spam") passes these, so NotFilter rejects them
+        record = logging.makeLogRecord({"name": name})
+        assert not handler_under_test.filter(record)
+
+    def test_wraps_or_filter(self):
+        # NotFilter can wrap an OrFilter (duck-typed, not a logging.Filter)
+        combined = NotFilter(OrFilter("spam", "ham.egg"))
+
+        # Names OrFilter would pass are now rejected
+        assert not combined.filter(logging.makeLogRecord({"name": "spam"}))
+        assert not combined.filter(logging.makeLogRecord({"name": "ham.egg"}))
+        # Names OrFilter would reject are now passed
+        assert combined.filter(logging.makeLogRecord({"name": "ham"}))
+        assert combined.filter(logging.makeLogRecord({"name": "quux"}))
+
+    def test_double_negation(self):
+        # NotFilter(NotFilter(...)) restores the original behavior
+        combined = NotFilter(NotFilter(logging.Filter("spam")))
+
+        assert combined.filter(logging.makeLogRecord({"name": "spam"}))
+        assert combined.filter(logging.makeLogRecord({"name": "spam.eggs"}))
         assert not combined.filter(logging.makeLogRecord({"name": "other"}))
